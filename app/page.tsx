@@ -22,7 +22,25 @@ interface Friend {
   name: string;
   handle: string;
   avatar: string;
-  added: boolean;
+  relation: "none" | "outgoing" | "incoming" | "friends";
+}
+
+interface Conversation {
+  friend: Pick<Friend, "id" | "name" | "handle" | "avatar">;
+  last_message: {
+    content: string;
+    created_at: string;
+    sender_id: string;
+  } | null;
+}
+
+interface DirectMessage {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+  is_read?: boolean;
 }
 
 interface Story {
@@ -65,6 +83,7 @@ const NAV_ITEMS = [
   { label: "Feed", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
   { label: "Stories", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" },
   { label: "Friends", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+  { label: "Messages", icon: "M8 10h.01M12 10h.01M16 10h.01M21 10c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 18l1.395-3.72C3.512 13.042 3 11.574 3 10c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
   { label: "Subscription", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
   { label: "Settings", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
   { label: "Help & Support", icon: "M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
@@ -110,18 +129,34 @@ function StoriesPage({ onOpenStory }: { onOpenStory: (story: Story) => void }) {
   );
 }
 
-function FriendsPage({ friends, onAdd }: { friends: Friend[]; onAdd: (id: string) => void }) {
-  const acceptedFriends = friends.filter(f => f.added);
-  const suggestions = friends.filter(f => !f.added);
+function FriendsPage({
+  friends,
+  onAdd,
+  onMessage,
+}: {
+  friends: Friend[];
+  onAdd: (id: string) => void;
+  onMessage: (id: string) => void;
+}) {
+  const acceptedFriends = friends.filter(f => f.relation === "friends");
+  const requestsToAccept = friends.filter(f => f.relation === "incoming");
+  const suggestions = friends.filter(f => f.relation === "none" || f.relation === "outgoing");
+
+  const getActionLabel = (friend: Friend) => {
+    if (friend.relation === "incoming") return "Accept";
+    if (friend.relation === "outgoing") return "Requested";
+    if (friend.relation === "friends") return "Friends";
+    return "Add Friend";
+  };
 
   return (
     <div className="flex-1 overflow-y-auto space-y-8 px-4 py-5 pb-24 sm:px-6 sm:py-6 lg:pb-6">
       <section>
-        <h2 className="text-lg font-bold text-gray-800 mb-1">People You Follow</h2>
-        <p className="text-sm text-gray-400 mb-6">Accounts you have already added</p>
+        <h2 className="text-lg font-bold text-gray-800 mb-1">Friends</h2>
+        <p className="text-sm text-gray-400 mb-6">Accepted connections who can message you back</p>
         {acceptedFriends.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-400">
-            You have not followed anyone yet.
+            No accepted friends yet.
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -129,12 +164,50 @@ function FriendsPage({ friends, onAdd }: { friends: Friend[]; onAdd: (id: string
               <div key={f.id} className="bg-white rounded-2xl p-4 flex flex-col items-center text-center">
                 <img src={f.avatar} alt={f.name} className="w-16 h-16 rounded-full object-cover mb-3" />
                 <p className="font-semibold text-gray-800 text-sm leading-tight">{f.name}</p>
+                <p className="text-gray-400 text-sm">{f.handle}</p>
+                <p className="text-xs text-emerald-600 font-semibold mt-2 mb-4">You can message each other</p>
+                <div className="w-full space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => onMessage(f.id)}
+                    className="w-full py-2 rounded-xl text-sm font-semibold transition-all bg-[#5555ee] text-white hover:bg-[#4444cc]"
+                  >
+                    Message
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full py-2 rounded-xl text-sm font-semibold transition-all bg-emerald-50 text-emerald-700"
+                  >
+                    Friends
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-lg font-bold text-gray-800 mb-1">Requests To Accept</h2>
+        <p className="text-sm text-gray-400 mb-6">Accept a request to unlock mutual messaging</p>
+        {requestsToAccept.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-400">
+            No pending incoming requests.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {requestsToAccept.map(f => (
+              <div key={f.id} className="bg-white rounded-2xl p-4 flex flex-col items-center text-center">
+                <img src={f.avatar} alt={f.name} className="w-16 h-16 rounded-full object-cover mb-3" />
+                <p className="font-semibold text-gray-800 text-sm leading-tight">{f.name}</p>
                 <p className="text-gray-400 text-sm mb-4">{f.handle}</p>
                 <button
+                  type="button"
                   onClick={() => onAdd(f.id)}
-                  className="w-full py-2 rounded-xl text-sm font-semibold transition-all bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  className="w-full py-2 rounded-xl text-sm font-semibold transition-all bg-[#5555ee] text-white hover:bg-[#4444cc]"
                 >
-                  Following
+                  Accept Request
                 </button>
               </div>
             ))}
@@ -152,15 +225,166 @@ function FriendsPage({ friends, onAdd }: { friends: Friend[]; onAdd: (id: string
               <p className="font-semibold text-gray-800 text-sm leading-tight">{f.name}</p>
               <p className="text-gray-400 text-sm mb-4">{f.handle}</p>
               <button
+                type="button"
                 onClick={() => onAdd(f.id)}
-                className="w-full py-2 rounded-xl text-sm font-semibold transition-all bg-[#5555ee] text-white hover:bg-[#4444cc]"
+                className={`w-full py-2 rounded-xl text-sm font-semibold transition-all ${
+                  f.relation === "outgoing"
+                    ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                    : "bg-[#5555ee] text-white hover:bg-[#4444cc]"
+                }`}
               >
-                Add Friend
+                {getActionLabel(f)}
               </button>
             </div>
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function MessagesPage({
+  conversations,
+  selectedFriendId,
+  messages,
+  loading,
+  error,
+  draft,
+  onDraftChange,
+  onSelectFriend,
+  onSend,
+  sending,
+  currentUserId,
+}: {
+  conversations: Conversation[];
+  selectedFriendId: string;
+  messages: DirectMessage[];
+  loading: boolean;
+  error: string;
+  draft: string;
+  onDraftChange: (value: string) => void;
+  onSelectFriend: (friendId: string) => void;
+  onSend: () => void;
+  sending: boolean;
+  currentUserId: string;
+}) {
+  const selectedConversation = conversations.find((conversation) => conversation.friend.id === selectedFriendId) || null;
+
+  return (
+    <div className="flex-1 overflow-y-auto px-4 py-5 pb-24 sm:px-6 sm:py-6 lg:pb-6">
+      <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <section className="rounded-[2rem] border border-white/70 bg-white/95 p-4 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-gray-800">Messages</h2>
+            <p className="text-sm text-gray-400">Chat with accepted friends</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+              {error}
+            </div>
+          )}
+
+          {conversations.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-400">
+              Accept a friend request first to start messaging.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {conversations.map((conversation) => (
+                <button
+                  key={conversation.friend.id}
+                  type="button"
+                  onClick={() => onSelectFriend(conversation.friend.id)}
+                  className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
+                    selectedFriendId === conversation.friend.id ? "bg-[#eef0ff]" : "hover:bg-slate-50"
+                  }`}
+                >
+                  <img src={conversation.friend.avatar} alt={conversation.friend.name} className="h-11 w-11 rounded-2xl object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-800">{conversation.friend.name}</p>
+                    <p className="truncate text-xs text-slate-400">
+                      {conversation.last_message?.content || "Start your conversation"}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-[2rem] border border-white/70 bg-white/95 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)]">
+          {!selectedConversation ? (
+            <div className="flex h-full min-h-[520px] items-center justify-center px-6 text-center text-sm text-gray-400">
+              Select a friend to see your messages.
+            </div>
+          ) : (
+            <div className="flex min-h-[520px] flex-col">
+              <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+                <img
+                  src={selectedConversation.friend.avatar}
+                  alt={selectedConversation.friend.name}
+                  className="h-12 w-12 rounded-2xl object-cover"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{selectedConversation.friend.name}</p>
+                  <p className="text-xs text-slate-400">{selectedConversation.friend.handle}</p>
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
+                {loading ? (
+                  <p className="text-sm text-gray-400">Loading messages...</p>
+                ) : error ? (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+                ) : messages.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-400">
+                    No messages yet. Say hello.
+                  </div>
+                ) : (
+                  messages.map((message) => {
+                    const isMine = message.sender_id === currentUserId;
+                    return (
+                      <div key={message.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                            isMine ? "bg-[#5555ee] text-white" : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          <p className="leading-6">{message.content}</p>
+                          <p className={`mt-2 text-[10px] ${isMine ? "text-white/70" : "text-slate-400"}`}>
+                            {new Date(message.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="border-t border-slate-100 px-5 py-4">
+                <div className="flex items-end gap-3">
+                  <textarea
+                    value={draft}
+                    onChange={(e) => onDraftChange(e.target.value)}
+                    placeholder={`Message ${selectedConversation.friend.name}`}
+                    rows={2}
+                    className="min-h-[64px] flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-[#5555ee]"
+                  />
+                  <button
+                    type="button"
+                    onClick={onSend}
+                    disabled={sending || !draft.trim()}
+                    className="rounded-2xl bg-[#5555ee] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#4444cc] disabled:opacity-50"
+                  >
+                    {sending ? "Sending..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
@@ -345,8 +569,8 @@ function SettingsPage({ onLogout, onProfileUpdated }: { onLogout: () => void; on
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setProfileError("Please choose an image file");
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setProfileError("Only JPEG and PNG images are allowed");
       return;
     }
 
@@ -387,22 +611,28 @@ function SettingsPage({ onLogout, onProfileUpdated }: { onLogout: () => void; on
         const avatarFormData = new FormData();
         avatarFormData.append("avatar", profilePhotoFile);
 
-        const avatarRes = await fetch('/api/users/me/avatar', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: avatarFormData,
-        });
+        try {
+          const avatarRes = await fetch('/api/users/me/avatar', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: avatarFormData,
+          });
 
-        const avatarData = await avatarRes.json();
-        if (!avatarRes.ok) {
-          setProfileError(avatarData.error || 'Unable to upload profile photo');
+          const avatarData = await avatarRes.json();
+          if (!avatarRes.ok) {
+            setProfileError(avatarData.error || 'Unable to upload profile photo');
+            setProfileSaving(false);
+            return;
+          }
+
+          avatarUrl = avatarData.avatar_url || profilePhoto;
+        } catch (error) {
+          setProfileError('Network error uploading photo. Please check your connection and try again.');
           setProfileSaving(false);
           return;
         }
-
-        avatarUrl = avatarData.avatar_url || profilePhoto;
       }
 
       const res = await fetch('/api/users/me', {
@@ -515,7 +745,7 @@ function SettingsPage({ onLogout, onProfileUpdated }: { onLogout: () => void; on
             {isEditing && (
               <label className="cursor-pointer text-xs font-semibold text-[#5555ee] hover:text-[#4444cc] transition-colors">
                 Change photo
-                <input type="file" accept="image/*" onChange={handleProfilePhotoChange} className="hidden" />
+                <input type="file" accept="image/jpeg,image/png" onChange={handleProfilePhotoChange} className="hidden" />
               </label>
             )}
           </div>
@@ -682,6 +912,7 @@ export default function FeedPage() {
   const [newPostText, setNewPostText] = useState("");
   const [newPostImage, setNewPostImage] = useState<File | null>(null);
   const [newPostError, setNewPostError] = useState("");
+  const [isPosting, setIsPosting] = useState(false);
   const [currentUserAvatar, setCurrentUserAvatar] = useState("https://i.pravatar.cc/40?img=30");
   const [currentUserName, setCurrentUserName] = useState("User");
   const [currentUserUsername, setCurrentUserUsername] = useState("@user");
@@ -694,8 +925,16 @@ export default function FeedPage() {
   const [selectedProfile, setSelectedProfile] = useState<ProfileDetails | null>(null);
   const [selectedProfilePosts, setSelectedProfilePosts] = useState<Post[]>([]);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState("");
+  const [messages, setMessages] = useState<DirectMessage[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messagesError, setMessagesError] = useState("");
+  const [messageDraft, setMessageDraft] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
   const router = useRouter();
-  const followingCount = friends.filter(friend => friend.added).length;
+  const friendCount = friends.filter(friend => friend.relation === "friends").length;
+  const incomingRequestCount = friends.filter(friend => friend.relation === "incoming").length;
 
   const getToken = () => localStorage.getItem("token");
 
@@ -718,30 +957,125 @@ export default function FeedPage() {
     if (user.id) setCurrentUserId(user.id);
   };
 
+  const syncConversations = async (token: string) => {
+    const acceptedFriends = friends.filter((friend) => friend.relation === "friends");
+    const res = await fetch("/api/messages", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const data: Conversation[] | { error?: string } = await res.json();
+
+    if (!res.ok || !Array.isArray(data)) {
+      setMessagesError(Array.isArray(data) ? "Unable to load messages" : (data.error || "Unable to load messages"));
+      setConversations(
+        acceptedFriends.map((friend) => ({
+          friend: {
+            id: friend.id,
+            name: friend.name,
+            handle: friend.handle,
+            avatar: friend.avatar,
+          },
+          last_message: null,
+        }))
+      );
+      return;
+    }
+
+    const fallbackConversations = acceptedFriends
+      .filter((friend) => !data.some((conversation) => conversation.friend.id === friend.id))
+      .map((friend) => ({
+        friend: {
+          id: friend.id,
+          name: friend.name,
+          handle: friend.handle,
+          avatar: friend.avatar,
+        },
+        last_message: null,
+      }));
+
+    const mergedConversations = [...data, ...fallbackConversations];
+
+    setConversations(mergedConversations);
+    setMessagesError("");
+
+    const hasActiveConversation = mergedConversations.some((conversation) => conversation.friend.id === activeConversationId);
+    if (mergedConversations.length === 0) {
+      setActiveConversationId("");
+      setMessages([]);
+      return;
+    }
+
+    if (!activeConversationId || !hasActiveConversation) {
+      setActiveConversationId(mergedConversations[0].friend.id);
+    }
+  };
+
+  const loadConversation = async (friendId: string, token: string) => {
+    setMessagesLoading(true);
+    setMessagesError("");
+
+    try {
+      const res = await fetch(`/api/messages/${friendId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data: DirectMessage[] | { error?: string } = await res.json();
+
+      if (!res.ok || !Array.isArray(data)) {
+        setMessagesError(Array.isArray(data) ? "Unable to load conversation" : (data.error || "Unable to load conversation"));
+        setMessages([]);
+        return;
+      }
+
+      setMessages(data);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
   const syncFriends = async (userId: string, token: string) => {
-    const [usersRes, followingRes] = await Promise.all([
-      fetch("/api/users"),
+    const [usersRes, followingRes, followersRes] = await Promise.all([
+      fetch("/api/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
       fetch(`/api/users/${userId}/following`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch(`/api/users/${userId}/followers`, {
         headers: { Authorization: `Bearer ${token}` },
       }),
     ]);
 
     const usersData: SearchUser[] | { error?: string } = await usersRes.json();
     const followingData: Array<{ id: string; username: string; avatar_url?: string }> | { error?: string } = await followingRes.json();
+    const followersData: Array<{ id: string; username: string; avatar_url?: string }> | { error?: string } = await followersRes.json();
 
     if (!usersRes.ok || !Array.isArray(usersData)) return;
 
     const followingIds = new Set(Array.isArray(followingData) ? followingData.map(user => user.id) : []);
+    const followerIds = new Set(Array.isArray(followersData) ? followersData.map(user => user.id) : []);
     const mappedFriends = usersData
       .filter(user => user.id !== userId)
-      .map(user => ({
-        id: user.id,
-        name: `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.username,
-        handle: `@${user.username}`,
-        avatar: user.avatar_url || "https://i.pravatar.cc/36",
-        added: followingIds.has(user.id),
-      }))
-      .sort((a, b) => Number(b.added) - Number(a.added) || a.name.localeCompare(b.name));
+      .map(user => {
+        const isFollowing = followingIds.has(user.id);
+        const isFollower = followerIds.has(user.id);
+
+        let relation: Friend["relation"] = "none";
+        if (isFollowing && isFollower) relation = "friends";
+        else if (isFollowing) relation = "outgoing";
+        else if (isFollower) relation = "incoming";
+
+        return {
+          id: user.id,
+          name: `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.username,
+          handle: `@${user.username}`,
+          avatar: user.avatar_url || "https://i.pravatar.cc/36",
+          relation,
+        };
+      })
+      .sort((a, b) => {
+        const order = { incoming: 0, friends: 1, outgoing: 2, none: 3 } as const;
+        return order[a.relation] - order[b.relation] || a.name.localeCompare(b.name);
+      });
 
     setFriends(mappedFriends);
   };
@@ -780,11 +1114,28 @@ export default function FeedPage() {
       if (meData?.id) {
         setCurrentUserId(meData.id);
         await syncFriends(meData.id, token);
+        await syncConversations(token);
       } else if (storedUser?.id) {
         await syncFriends(storedUser.id, token);
+        await syncConversations(token);
       }
     });
   }, []);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token || !activeConversationId) return;
+    loadConversation(activeConversationId, token);
+  }, [activeConversationId]);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token || !currentUserId) return;
+    if (activeNav !== "Friends" && activeNav !== "Messages") return;
+
+    void syncFriends(currentUserId, token);
+    void syncConversations(token);
+  }, [activeNav, currentUserId]);
 
   useEffect(() => {
     window.addEventListener("user-updated", syncCurrentUser);
@@ -805,7 +1156,16 @@ export default function FeedPage() {
       setSearchError("");
 
       try {
-        const res = await fetch(`/api/users?q=${encodeURIComponent(query)}`);
+        const token = getToken();
+        if (!token) {
+          setSearchError("Please sign in again");
+          setSearchResults([]);
+          return;
+        }
+
+        const res = await fetch(`/api/users?q=${encodeURIComponent(query)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const data: SearchUser[] | { error?: string } = await res.json();
 
         if (!res.ok || !Array.isArray(data)) {
@@ -889,22 +1249,69 @@ export default function FeedPage() {
     const existing = friends.find(f => f.id === id);
     if (!existing) return;
 
-    const nextAdded = !existing.added;
-    setFriends(prev => prev.map(f => f.id === id ? { ...f, added: nextAdded } : f));
+    const nextRelation =
+      existing.relation === "incoming"
+        ? "friends"
+        : existing.relation === "none"
+          ? "outgoing"
+          : existing.relation;
+
+    setFriends(prev => prev.map(f => f.id === id ? { ...f, relation: nextRelation } : f));
 
     const res = await fetch(`/api/users/${id}/follow`, {
-      method: nextAdded ? "POST" : "DELETE",
+      method: existing.relation === "outgoing" ? "DELETE" : "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!res.ok) {
-      setFriends(prev => prev.map(f => f.id === id ? { ...f, added: existing.added } : f));
+      setFriends(prev => prev.map(f => f.id === id ? { ...f, relation: existing.relation } : f));
       return;
     }
 
     if (currentUserId) {
       await syncFriends(currentUserId, token);
+      await syncConversations(token);
     }
+  };
+
+  const handleSendMessage = async () => {
+    const token = getToken();
+    if (!token || !activeConversationId || !messageDraft.trim()) return;
+
+    setSendingMessage(true);
+
+    try {
+      const res = await fetch(`/api/messages/${activeConversationId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: messageDraft }),
+      });
+
+      const data: DirectMessage | { error?: string } = await res.json();
+
+      if (!res.ok || !("id" in data)) {
+        setMessagesError("error" in data ? (data.error || "Unable to send message") : "Unable to send message");
+        return;
+      }
+
+      setMessages((prev) => [...prev, data]);
+      setMessageDraft("");
+      await syncConversations(token);
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const handleOpenMessagesWithFriend = async (friendId: string) => {
+    const token = getToken();
+    if (!token) return;
+
+    setActiveNav("Messages");
+    await syncConversations(token);
+    setActiveConversationId(friendId);
   };
 
   const handleOpenStory = (story: Story) => {
@@ -912,6 +1319,12 @@ export default function FeedPage() {
   };
 
   const handleOpenProfile = async (user: { id: string; username: string; first_name?: string; last_name?: string; avatar_url?: string }) => {
+    const token = getToken();
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     setProfileLoading(true);
     setActiveNav("Profile");
     setSelectedProfile({
@@ -926,11 +1339,17 @@ export default function FeedPage() {
     setSearchResults([]);
 
     try {
-      const profilePromise = fetch(`/api/users/${user.id}`)
+      const authHeaders = { Authorization: `Bearer ${token}` };
+
+      const profilePromise = fetch(`/api/users/${user.id}`, {
+        headers: authHeaders,
+      })
         .then(async res => (res.ok ? res.json() : null))
         .catch(() => null);
 
-      const postsPromise = fetch(`/api/posts?author_id=${encodeURIComponent(user.id)}`)
+      const postsPromise = fetch(`/api/posts?author_id=${encodeURIComponent(user.id)}`, {
+        headers: authHeaders,
+      })
         .then(async res => {
           if (!res.ok) return [];
           const data = await res.json();
@@ -938,11 +1357,15 @@ export default function FeedPage() {
         })
         .catch(() => []);
 
-      const followersPromise = fetch(`/api/users/${user.id}/followers`)
+      const followersPromise = fetch(`/api/users/${user.id}/followers`, {
+        headers: authHeaders,
+      })
         .then(async res => (res.ok ? res.json() : []))
         .catch(() => []);
 
-      const followingPromise = fetch(`/api/users/${user.id}/following`)
+      const followingPromise = fetch(`/api/users/${user.id}/following`, {
+        headers: authHeaders,
+      })
         .then(async res => (res.ok ? res.json() : []))
         .catch(() => []);
 
@@ -987,6 +1410,7 @@ export default function FeedPage() {
   };
 
   const handleNewPost = async () => {
+    if (isPosting) return;
     setNewPostError("");
 
     if (!newPostText.trim() && !newPostImage) {
@@ -1008,33 +1432,47 @@ export default function FeedPage() {
       formData.append('image', newPostImage);
     }
 
-    const res = await fetch('/api/posts', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${getToken()}` },
-      body: formData,
-    });
+    setIsPosting(true);
 
-    const data = await res.json();
-    if (!res.ok) {
-      setNewPostError(data.error || 'Could not create post');
-      return;
+    try {
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setNewPostError(data.error || 'Could not create post');
+        return;
+      }
+
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const p: Post = {
+        id: data.id,
+        author: {
+          id: data.author?.id ?? user.id,
+          username: data.author?.username ?? user.username,
+          name: `${user.first_name || user.username}`,
+          role: 'Member',
+          avatar: data.author?.avatar_url || user.avatar_url || 'https://i.pravatar.cc/40?img=30',
+        },
+        content: newPostText.trim(),
+        hashtags: [],
+        image: data.image_url || undefined,
+        likes: 0, comments: 0, shares: 0, saved: 0,
+        liked: false, commentText: '',
+      };
+
+      setPosts(prev => (prev.some(existing => existing.id === p.id) ? prev : [p, ...prev]));
+      setNewPostText('');
+      setNewPostImage(null);
+      setShowNewPost(false);
+    } catch (error) {
+      setNewPostError('Network error creating post. Please check your connection and try again.');
+    } finally {
+      setIsPosting(false);
     }
-
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const p: Post = {
-      id: data.id,
-      author: { name: `${user.first_name || user.username}`, role: 'Member', avatar: user.avatar_url || 'https://i.pravatar.cc/40?img=30' },
-      content: newPostText.trim(),
-      hashtags: [],
-      image: data.image_url || undefined,
-      likes: 0, comments: 0, shares: 0, saved: 0,
-      liked: false, commentText: '',
-    };
-
-    setPosts(prev => [p, ...prev]);
-    setNewPostText('');
-    setNewPostImage(null);
-    setShowNewPost(false);
   };
 
   const handleLogout = async () => {
@@ -1048,7 +1486,7 @@ export default function FeedPage() {
   };
 
   const primaryMobileNavItems = NAV_ITEMS.filter(item =>
-    ["Feed", "Stories", "Friends", "Settings"].includes(item.label)
+    ["Feed", "Stories", "Friends", "Messages", "Settings"].includes(item.label)
   );
 
   const renderFriendSuggestions = (className: string) => (
@@ -1060,28 +1498,29 @@ export default function FeedPage() {
         </button>
       </div>
       <div className="space-y-3">
-        {friends.filter(f => !f.added).map(f => (
+        {friends.filter(f => f.relation !== "friends").map(f => (
           <div key={f.id} className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
               <img src={f.avatar} alt={f.name} className="w-9 h-9 rounded-full object-cover" />
               <div className="min-w-0">
                 <p className="truncate text-gray-800 text-sm font-semibold leading-tight">{f.name}</p>
-                <p className="truncate text-gray-400 text-[10px]">{f.handle}</p>
+                <p className="truncate text-gray-400 text-[10px]">
+                  {f.handle} {f.relation === "incoming" ? "• wants to connect" : f.relation === "outgoing" ? "• request sent" : ""}
+                </p>
               </div>
             </div>
             <button
+              type="button"
               onClick={() => handleAddFriend(f.id)}
-              className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${f.added ? "bg-[#5555ee] border-[#5555ee] text-white" : "border-gray-200 text-gray-400 hover:border-[#5555ee] hover:text-[#5555ee]"}`}
+              className={`min-w-[72px] rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                f.relation === "incoming"
+                  ? "bg-[#5555ee] text-white hover:bg-[#4444cc]"
+                  : f.relation === "outgoing"
+                    ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                    : "border border-gray-200 text-gray-500 hover:border-[#5555ee] hover:text-[#5555ee]"
+              }`}
             >
-              {f.added ? (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-              )}
+              {f.relation === "incoming" ? "Accept" : f.relation === "outgoing" ? "Requested" : "Add"}
             </button>
           </div>
         ))}
@@ -1089,10 +1528,60 @@ export default function FeedPage() {
     </div>
   );
 
+  const renderMobileFeedIntro = () => (
+    <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#4444cc] via-[#5555ee] to-[#7a7af7] p-5 text-white shadow-[0_24px_60px_-28px_rgba(85,85,238,0.85)] sm:hidden">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70">Your Feed</p>
+          <h1 className="mt-2 text-2xl font-black leading-tight">Catch up with your people.</h1>
+          <p className="mt-2 max-w-xs text-sm leading-6 text-white/80">
+            Stories, posts, and replies are all tuned for a proper phone layout now.
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white/14 px-3 py-2 text-right backdrop-blur">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-white/65">Friends</p>
+          <p className="text-lg font-bold">{friendCount}</p>
+        </div>
+      </div>
+      <div className="mt-5 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setShowNewPost(true)}
+          className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-[#4444cc] shadow-lg shadow-black/10"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef0ff] text-base">+</span>
+          Create post
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveNav("Stories")}
+          className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur"
+        >
+          Watch stories
+        </button>
+      </div>
+    </div>
+  );
+
   const renderSection = () => {
     switch (activeNav) {
       case "Stories": return <StoriesPage onOpenStory={handleOpenStory} />;
-      case "Friends": return <FriendsPage friends={friends} onAdd={handleAddFriend} />;
+      case "Friends": return <FriendsPage friends={friends} onAdd={handleAddFriend} onMessage={handleOpenMessagesWithFriend} />;
+      case "Messages": return (
+        <MessagesPage
+          conversations={conversations}
+          selectedFriendId={activeConversationId}
+          messages={messages}
+          loading={messagesLoading}
+          error={messagesError}
+          draft={messageDraft}
+          onDraftChange={setMessageDraft}
+          onSelectFriend={setActiveConversationId}
+          onSend={handleSendMessage}
+          sending={sendingMessage}
+          currentUserId={currentUserId}
+        />
+      );
       case "Profile": return <UserProfilePage profile={selectedProfile} posts={selectedProfilePosts} loading={profileLoading} onBack={() => setActiveNav("Feed")} />;
       case "Subscription": return <SubscriptionPage />;
       case "Settings": return <SettingsPage onLogout={handleLogout} onProfileUpdated={applyCurrentUser} />;
@@ -1148,13 +1637,34 @@ export default function FeedPage() {
                 {newPostError && <p className="text-xs text-red-500 mt-1">{newPostError}</p>}
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <span className="text-sm text-gray-400">{newPostText.length}/280</span>
-                  <button onClick={handleNewPost} disabled={!newPostText.trim()} className="bg-[#5555ee] hover:bg-[#4444cc] disabled:opacity-40 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors">Post</button>
+                  <button
+                    onClick={handleNewPost}
+                    disabled={isPosting || (!newPostText.trim() && !newPostImage)}
+                    className="bg-[#5555ee] hover:bg-[#4444cc] disabled:opacity-40 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors"
+                  >
+                    {isPosting ? "Posting..." : "Post"}
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="bg-white rounded-2xl p-4">
+          {renderMobileFeedIntro()}
+
+          <div className="rounded-[2rem] border border-white/70 bg-white/90 p-4 shadow-[0_20px_45px_-30px_rgba(15,23,42,0.45)] backdrop-blur">
+            <div className="mb-3 flex items-center justify-between sm:hidden">
+              <div>
+                <p className="text-sm font-bold text-slate-900">Stories</p>
+                <p className="text-xs text-slate-400">Quick updates from your circle</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveNav("Stories")}
+                className="rounded-full bg-[#eef0ff] px-3 py-1.5 text-xs font-semibold text-[#5555ee]"
+              >
+                See all
+              </button>
+            </div>
             <div className="flex gap-4 overflow-x-auto pb-1">
               {STORIES.map(s => (
                 <button
@@ -1163,10 +1673,10 @@ export default function FeedPage() {
                   onClick={() => handleOpenStory(s)}
                   className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer group"
                 >
-                  <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-br from-[#5555ee] to-purple-400">
+                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#4444cc] via-[#5555ee] to-[#8f95ff] p-[3px] shadow-md shadow-[#5555ee]/20">
                     <img src={s.avatar} alt={s.handle} className="w-full h-full rounded-full object-cover border-2 border-white" />
                   </div>
-                  <span className="text-[10px] text-gray-500 group-hover:text-[#5555ee] transition-colors truncate max-w-[56px]">{s.handle}</span>
+                  <span className="max-w-[64px] truncate text-[11px] font-medium text-gray-500 transition-colors group-hover:text-[#5555ee]">{s.handle}</span>
                 </button>
               ))}
             </div>
@@ -1180,7 +1690,7 @@ export default function FeedPage() {
           )}
 
           {posts.map(post => (
-            <div key={post.id} className="bg-white rounded-2xl overflow-hidden">
+            <div key={post.id} className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur">
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
                 <button
                   type="button"
@@ -1192,43 +1702,56 @@ export default function FeedPage() {
                       avatar_url: post.author.avatar,
                     });
                   }}
-                  className="flex items-center gap-3 text-left"
+                  className="flex min-w-0 items-center gap-3 text-left"
                 >
-                  <img src={post.author.avatar} alt={post.author.name} className="w-10 h-10 rounded-full object-cover" />
-                  <div>
+                  <img src={post.author.avatar} alt={post.author.name} className="h-11 w-11 rounded-full object-cover ring-2 ring-[#eef0ff]" />
+                  <div className="min-w-0">
                     <p className="font-semibold text-gray-800 text-sm leading-tight">{post.author.name}</p>
                     <p className="text-gray-400 text-sm">{post.author.role}</p>
                   </div>
+                </button>
+                <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 5.5A1.5 1.5 0 1110 8.5a1.5 1.5 0 010 3zm0 5.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
+                  </svg>
                 </button>
               </div>
               <div className="px-4 pb-3">
                 <p className="text-gray-600 text-sm leading-relaxed">{post.content}</p>
               </div>
               {post.image && (
-                <div className="mx-4 mb-3 rounded-xl overflow-hidden">
-                  <img src={post.image} alt="post" className="w-full h-56 object-cover" />
+                <div className="mx-4 mb-3 overflow-hidden rounded-[1.5rem]">
+                  <img src={post.image} alt="post" className="h-64 w-full object-cover" />
                 </div>
               )}
-              <div className="px-4 pb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-400 border-b border-gray-100">
+              <div className="border-b border-slate-100 px-4 pb-3 text-sm text-gray-400">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-400">Moments from your network</span>
+                  <span className="rounded-full bg-[#eef0ff] px-2.5 py-1 text-[11px] font-semibold text-[#5555ee]">
+                    {post.likes + post.comments} reactions
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <button
                   onClick={() => handleLike(post.id)}
-                  className={`flex items-center gap-1.5 transition-colors ${post.liked ? "text-[#5555ee]" : "hover:text-[#5555ee]"}`}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 transition-colors ${post.liked ? "bg-[#eef0ff] text-[#5555ee]" : "bg-slate-100 text-slate-500 hover:text-[#5555ee]"}`}
                 >
                   <svg className="w-4 h-4" fill={post.liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
                   </svg>
                   {post.likes} Likes
                 </button>
-                <span className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-slate-500">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   {post.comments} Comments
                 </span>
+                </div>
               </div>
               <div className="px-4 py-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
                 <img src={currentUserAvatar} alt="me" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
+                <div className="flex flex-1 items-center gap-2 rounded-2xl bg-slate-100 px-3 py-2.5">
                   <input
                     value={post.commentText}
                     onChange={e => handleComment(post.id, e.target.value)}
@@ -1238,7 +1761,7 @@ export default function FeedPage() {
                   />
                   <button
                     onClick={() => submitComment(post.id)}
-                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${post.commentText.trim() ? "bg-[#5555ee] text-white" : "bg-gray-300 text-gray-400"}`}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${post.commentText.trim() ? "bg-[#5555ee] text-white" : "bg-gray-300 text-gray-400"}`}
                   >
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -1249,14 +1772,14 @@ export default function FeedPage() {
             </div>
           ))}
 
-          {activeNav === "Feed" && renderFriendSuggestions("rounded-2xl bg-white p-4 xl:hidden")}
+          {activeNav === "Feed" && renderFriendSuggestions("rounded-[2rem] border border-white/70 bg-white/95 p-4 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.35)] lg:hidden")}
         </div>
       );
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#eef0f8] text-base lg:h-screen lg:flex-row lg:overflow-hidden" style={{ fontFamily: "'Plus Jakarta Sans', 'Nunito', sans-serif" }}>
+    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_#f8f9ff_0%,_#eef0f8_48%,_#e7ebfb_100%)] text-base lg:h-screen lg:flex-row lg:overflow-hidden" style={{ fontFamily: "'Plus Jakarta Sans', 'Nunito', sans-serif" }}>
       <aside className="hidden h-full w-56 flex-shrink-0 flex-col bg-[#4444cc] lg:flex">
         <div className="px-5 py-5 flex items-center gap-2">
           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
@@ -1285,9 +1808,9 @@ export default function FeedPage() {
                 </svg>
                 <span className="text-sm font-medium">{item.label}</span>
               </div>
-              {(item.label === "Friends" ? followingCount : 0) > 0 && (
+              {(item.label === "Friends" ? incomingRequestCount || friendCount : 0) > 0 && (
                 <span className="bg-white text-[#4444cc] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                  {item.label === "Friends" ? followingCount : 0}
+                  {item.label === "Friends" ? incomingRequestCount || friendCount : 0}
                 </span>
               )}
             </button>
@@ -1318,28 +1841,27 @@ export default function FeedPage() {
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col lg:overflow-hidden">
-        <header className="flex-shrink-0 border-b border-gray-100 bg-white px-4 py-3 sm:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center justify-between gap-3 lg:hidden">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4444cc]">
+        <header className="sticky top-0 z-30 flex-shrink-0 border-b border-white/60 bg-white/85 px-4 py-3 backdrop-blur-xl sm:px-6 lg:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#4444cc] to-[#6b6bf4] shadow-lg shadow-[#5555ee]/25">
                 <span className="text-sm font-black text-white">c</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Connexio</p>
-                <p className="text-xs text-gray-400">{activeNav}</p>
+                <p className="text-base font-black tracking-tight text-slate-900">Connexio</p>
+                <p className="text-xs text-slate-400">{activeNav === "Feed" ? "Social dashboard" : activeNav}</p>
               </div>
             </div>
             <button
               onClick={() => { setActiveNav("Feed"); setShowNewPost(true); }}
-              className="flex items-center gap-2 rounded-xl bg-[#5555ee] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4444cc]"
+              className="flex items-center gap-2 rounded-2xl bg-slate-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/15 transition-colors hover:bg-slate-800"
             >
               Post
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-sm font-bold">+</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-sm font-bold">+</span>
             </button>
           </div>
-          <div className="relative w-full sm:flex-1 sm:max-w-sm">
-            <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-4 py-2">
+          <div className="relative mt-3">
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-2.5">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -1384,32 +1906,85 @@ export default function FeedPage() {
               </div>
             )}
           </div>
-          <div className="flex items-center justify-between gap-2 sm:justify-end">
-          <button
-            onClick={() => { setActiveNav("Feed"); setShowNewPost(true); }}
-            className="hidden items-center gap-2 rounded-xl bg-[#5555ee] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4444cc] sm:flex"
-          >
-            Add New Post
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-sm font-bold">+</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <img src={currentUserAvatar} alt="me" className="w-9 h-9 rounded-full object-cover" />
-            <button onClick={() => setActiveNav("Settings")} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-          </div>
-          </div>
+        </header>
+        <header className="sticky top-0 z-30 hidden flex-shrink-0 border-b border-white/60 bg-white/85 px-6 py-4 backdrop-blur-xl lg:block">
+          <div className="flex items-center justify-between gap-6">
+            <div className="relative w-full max-w-sm">
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-2.5">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search accounts"
+                  className="bg-transparent text-sm text-gray-600 placeholder-gray-400 outline-none flex-1"
+                />
+              </div>
+              {searchQuery.trim() && (
+                <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-40 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl">
+                  {searchLoading ? (
+                    <div className="px-4 py-4 text-sm text-gray-400">Searching accounts...</div>
+                  ) : searchError ? (
+                    <div className="px-4 py-4 text-sm text-red-500">{searchError}</div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="px-4 py-4 text-sm text-gray-400">No accounts found</div>
+                  ) : (
+                    searchResults.slice(0, 6).map(user => {
+                      const name = `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.username;
+                      return (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => handleOpenProfile(user)}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                        >
+                          <img
+                            src={user.avatar_url || "https://i.pravatar.cc/40"}
+                            alt={user.username}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-gray-800">{name}</p>
+                            <p className="truncate text-xs text-gray-400">@{user.username}</p>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => { setActiveNav("Feed"); setShowNewPost(true); }}
+                className="flex items-center gap-2 rounded-2xl bg-[#5555ee] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#5555ee]/20 transition-colors hover:bg-[#4444cc]"
+              >
+                Add New Post
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-sm font-bold">+</span>
+              </button>
+              <div className="flex items-center gap-2 rounded-2xl bg-white/70 px-2 py-2">
+                <img src={currentUserAvatar} alt="me" className="h-9 w-9 rounded-xl object-cover" />
+                <div className="pr-2">
+                  <p className="text-sm font-semibold leading-tight text-slate-900">{currentUserName}</p>
+                  <p className="text-xs text-slate-400">{currentUserUsername}</p>
+                </div>
+                <button onClick={() => setActiveNav("Settings")} className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </header>
-        <div className="border-b border-gray-100 bg-white px-4 py-3 lg:hidden">
+        <div className="border-b border-white/60 bg-white/80 px-4 py-3 backdrop-blur lg:hidden">
           <div className="flex gap-2 overflow-x-auto pb-1">
             {NAV_ITEMS.map(item => (
               <button
                 key={item.label}
                 onClick={() => setActiveNav(item.label)}
-                className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${activeNav === item.label ? "bg-[#5555ee] text-white" : "bg-[#eef0f8] text-gray-500"}`}
+                className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${activeNav === item.label ? "bg-slate-900 text-white" : "bg-[#eef0f8] text-gray-500"}`}
               >
                 {item.label}
               </button>
@@ -1421,15 +1996,15 @@ export default function FeedPage() {
         </div>
       </main>
 
-      {activeNav === "Feed" && renderFriendSuggestions("hidden w-64 flex-shrink-0 overflow-y-auto border-l border-gray-100 bg-white p-4 xl:block")}
+      {activeNav === "Feed" && renderFriendSuggestions("hidden w-64 flex-shrink-0 overflow-y-auto border-l border-gray-100 bg-white p-4 lg:block")}
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-2 py-2 backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-2">
+      <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 pt-2 lg:hidden">
+        <div className="mx-auto flex max-w-md items-center justify-between gap-2 rounded-[2rem] border border-white/70 bg-white/95 p-2 shadow-[0_20px_45px_-20px_rgba(15,23,42,0.38)] backdrop-blur-xl">
           {primaryMobileNavItems.map(item => (
             <button
               key={item.label}
               onClick={() => setActiveNav(item.label)}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-semibold transition-colors ${activeNav === item.label ? "bg-[#eef0ff] text-[#5555ee]" : "text-gray-500"}`}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2.5 text-[11px] font-semibold transition-colors ${activeNav === item.label ? "bg-[#eef0ff] text-[#5555ee]" : "text-gray-500"}`}
             >
               <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />

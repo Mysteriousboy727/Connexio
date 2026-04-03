@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +50,38 @@ export default function LoginPage() {
       console.error("Login error:", err);
       setError("Network error. Please try again.");
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError("");
+    setGoogleLoading(true);
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const redirectTo = `${window.location.origin}/auth/google/callback`;
+
+      const { data, error: googleError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+        },
+      });
+
+      if (googleError) {
+        throw googleError;
+      }
+
+      if (data?.url) {
+        window.location.assign(data.url);
+        return;
+      }
+
+      throw new Error("Google sign-in did not return a redirect URL");
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      setError(err instanceof Error ? err.message : "Google sign-in failed");
+      setGoogleLoading(false);
     }
   };
 
@@ -110,11 +144,31 @@ export default function LoginPage() {
           </div>
 
           {/* Web3 Login Option */}
-          <button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 rounded-lg mb-6 transition-all flex items-center justify-center gap-2">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z" />
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={googleLoading || loading}
+            className="w-full bg-white hover:bg-slate-100 disabled:opacity-60 text-slate-900 font-semibold py-3 rounded-lg mb-6 transition-all flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="#4285F4"
+                d="M21.805 10.023H12v3.955h5.617c-.242 1.272-.967 2.35-2.058 3.074v2.553h3.327c1.947-1.793 3.069-4.437 3.069-7.582 0-.672-.06-1.318-.15-2Z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 22c2.79 0 5.13-.925 6.84-2.395l-3.327-2.553c-.924.62-2.106.986-3.513.986-2.699 0-4.984-1.822-5.8-4.271H2.76v2.632A10 10 0 0 0 12 22Z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M6.2 13.767A5.998 5.998 0 0 1 5.876 12c0-.614.11-1.21.324-1.767V7.6H2.76A10 10 0 0 0 2 12c0 1.61.386 3.135 1.07 4.4l3.13-2.633Z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.962c1.52 0 2.884.523 3.958 1.548l2.967-2.967C17.125 2.866 14.787 2 12 2A10 10 0 0 0 2.76 7.6l3.44 2.633c.814-2.451 3.1-4.27 5.8-4.27Z"
+              />
             </svg>
-            Sign in with Metamask
+            {googleLoading ? "Connecting to Google..." : "Continue with Google"}
           </button>
 
           {/* Divider */}
@@ -186,7 +240,7 @@ export default function LoginPage() {
 
           {/* Sign Up Link */}
           <p className="text-center text-gray-400 text-sm mt-6">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/register" className="text-cyan-400 font-semibold hover:text-cyan-300">
               Sign up
             </Link>

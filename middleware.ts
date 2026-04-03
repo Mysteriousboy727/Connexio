@@ -4,6 +4,7 @@ import { verifyToken } from './lib/jwt'
 const PUBLIC_ROUTES = [
   '/api/auth/register',
   '/api/auth/login',
+  '/api/auth/google',
   '/api/auth/logout',
 ]
 

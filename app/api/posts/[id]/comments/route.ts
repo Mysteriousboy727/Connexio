@@ -19,6 +19,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Verify user exists in database
+  const { data: userExists, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', user.userId)
+    .single()
+
+  if (userError || !userExists) {
+    return NextResponse.json({ error: 'User not found. Please log out and log back in.' }, { status: 401 })
+  }
+
   const { id: post_id } = await params
   const { content } = await req.json()
 
