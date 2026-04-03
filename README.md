@@ -1,4 +1,4 @@
-🚀 SocialConnect / Connexio
+SocialConnect / Connexio
 Full-Stack Social Media Platform
 
 A lightweight social networking application with authentication, posts, likes, comments, and personalized feeds.
@@ -25,83 +25,51 @@ Manage their profile
 Follow/unfollow users (optional)
 View a feed of posts
 🏗️ System Architecture
-┌───────────────────────────────────────────────┐
-│                SOCIALCONNECT                 │
-│           Full-Stack Web Platform            │
-└───────────────────────────────────────────────┘
-
-   ┌─────────────────────────────────────────┐
-   │         FRONTEND (Next.js + React)     │
-   │         http://localhost:3000          │
-   │                                         │
-   │  Dashboard | Feed | Profile | Auth      │
-   └─────────────────────────────────────────┘
-                     │
-                     ▼
-   ┌─────────────────────────────────────────┐
-   │       BACKEND (Next.js API Routes)      │
-   │            /api/* endpoints             │
-   │                                         │
-   │  Auth | Users | Posts | Likes | Feed    │
-   └─────────────────────────────────────────┘
-                     │
-         ┌───────────┼────────────┐
-         ▼           ▼            ▼
- ┌────────────┐ ┌────────────┐ ┌──────────────┐
- │ Supabase   │ │ Supabase   │ │ JWT System   │
- │ PostgreSQL │ │ Storage    │ │ (jose)       │
- │ Database   │ │ (Images)   │ │              │
- └────────────┘ └────────────┘ └──────────────┘
 🔄 Data Flow Diagram
 Diagram is not supported.
 🔐 Authentication Flow
 Diagram is not supported.
 🧰 Tech Stack
 🎨 Frontend
-Technology	Purpose
-Next.js	Full-stack React framework
-React	UI rendering
-TypeScript	Type safety
-Tailwind CSS	Styling
-shadcn/ui	UI components
+Next.js
+React
+TypeScript
+Tailwind CSS
+shadcn/ui
 🧠 Backend
-Technology	Purpose
-Next.js API Routes	Backend logic
-Middleware	Auth protection
-jose	JWT handling
+Next.js API Routes (/api)
+Middleware (JWT verification)
+jose (JWT handling)
 🗄️ Database & Storage
-Technology	Purpose
-Supabase (PostgreSQL)	Database
-Supabase Storage	Image storage
-Supabase JS Client	DB interaction
+Supabase (PostgreSQL)
+Supabase Storage
+Supabase JS Client
 🔐 Security
-Technology	Purpose
-bcryptjs	Password hashing
-JWT (jose)	Authentication
+bcryptjs (password hashing)
+JWT authentication
 ☁️ Deployment
-Platform	Purpose
-Vercel	Hosting
-GitHub	Version control
+Vercel
+GitHub
 🔌 API Design
-Authentication
+🔐 Authentication
 POST /api/auth/register
 POST /api/auth/login
 POST /api/auth/logout
-Users
+👤 Users
 GET /api/users
 GET /api/users/{id}
 PATCH /api/users/me
-Posts
+📝 Posts
 POST /api/posts
 GET /api/posts
 PATCH /api/posts/{id}
 DELETE /api/posts/{id}
-Social Features
+❤️ Social Features
 POST /api/posts/{id}/like
 DELETE /api/posts/{id}/like
 POST /api/posts/{id}/comments
 GET /api/posts/{id}/comments
-Feed
+📰 Feed
 GET /api/feed
 📁 Project Structure
 app/
@@ -122,7 +90,7 @@ types/
 
 middleware.ts
 ⚙️ Setup & Installation
-git clone <repo>
+git clone <your-repo-url>
 cd project
 npm install
 npm run dev
@@ -139,15 +107,15 @@ Like & Comment System
 User Profiles
 Feed System
 🔐 Security Features
-Password hashing (bcrypt)
-JWT authentication
-API route protection
+Password hashing using bcrypt
+JWT-based authentication
+Protected API routes
 Input validation
 🏁 Conclusion
 
-This project demonstrates a production-level full-stack architecture using:
+This project demonstrates a production-level full-stack application using:
 
 Next.js (frontend + backend)
-Supabase (DB + Storage)
+Supabase (database + storage)
 JWT authentication
-Clean API design
+Clean API architecture
