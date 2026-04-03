@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getUserFromRequest } from '@/lib/auth-utils'
 
-const STORAGE_BUCKET = process.env.SUPABASE_STORAGE_BUCKET?.trim() || 'images'
-
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -22,22 +20,17 @@ export async function POST(req: NextRequest) {
   const bytes = await file.arrayBuffer()
 
   const { error: uploadErr } = await supabase.storage
-    .from(STORAGE_BUCKET)
+    .from('images')
     .upload(path, bytes, { contentType: file.type, upsert: true })
 
-  if (uploadErr) {
-    const message = uploadErr.message || 'Upload failed'
-    return NextResponse.json({ error: message.startsWith('Bucket not found') ? 'Storage bucket not found. Please set SUPABASE_STORAGE_BUCKET correctly.' : message }, { status: 500 })
-  }
+  if (uploadErr) return NextResponse.json({ error: uploadErr.message }, { status: 500 })
 
-  const { data: urlData } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path)
+  const { data: urlData } = supabase.storage.from('images').getPublicUrl(path)
 
-  const { error: updateErr } = await supabase
+  await supabase
     .from('users')
     .update({ avatar_url: urlData.publicUrl })
     .eq('id', user.userId)
-
-  if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
   return NextResponse.json({ avatar_url: urlData.publicUrl })
 }

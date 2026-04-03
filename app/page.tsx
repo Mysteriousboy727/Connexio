@@ -315,7 +315,7 @@ function UserProfilePage({
   );
 }
 
-function SettingsPage({ onLogout }: { onLogout: () => void }) {
+function SettingsPage({ onLogout, onProfileUpdated }: { onLogout: () => void; onProfileUpdated: (user: { id?: string; username?: string; first_name?: string; last_name?: string; avatar_url?: string }) => void }) {
   const [notifications, setNotifications] = useState(true);
   const [privateAccount, setPrivateAccount] = useState(false);
   const [emailUpdates, setEmailUpdates] = useState(true);
@@ -430,6 +430,7 @@ function SettingsPage({ onLogout }: { onLogout: () => void }) {
           avatar_url: avatarUrl,
         };
         localStorage.setItem('user', JSON.stringify(updatedUser));
+        onProfileUpdated(updatedUser);
 
         // Sync local state in this view and top nav listener
         setProfileData({
@@ -446,8 +447,16 @@ function SettingsPage({ onLogout }: { onLogout: () => void }) {
         const meRes = await fetch('/api/users/me', { headers: { Authorization: `Bearer ${token}` } });
         if (meRes.ok) {
           const mePayload = await meRes.json();
-          const canonicalUser = { ...updatedUser, ...mePayload };
+          const canonicalUser = {
+            ...updatedUser,
+            ...mePayload,
+            avatar_url: avatarUrl,
+            username: mePayload.username || updatedUser.username,
+            first_name: mePayload.first_name ?? updatedUser.first_name,
+            last_name: mePayload.last_name ?? updatedUser.last_name,
+          };
           localStorage.setItem('user', JSON.stringify(canonicalUser));
+          onProfileUpdated(canonicalUser);
           setProfileData({
             displayName: `${canonicalUser.first_name || ''} ${canonicalUser.last_name || ''}`.trim() || canonicalUser.username || 'User',
             username: canonicalUser.username || '',
@@ -697,6 +706,15 @@ export default function FeedPage() {
     );
     setCurrentUserUsername(storedUser.username ? `@${storedUser.username}` : "@user");
     if (storedUser?.id) setCurrentUserId(storedUser.id);
+  };
+
+  const applyCurrentUser = (user: { id?: string; username?: string; first_name?: string; last_name?: string; avatar_url?: string }) => {
+    setCurrentUserAvatar(user.avatar_url || "https://i.pravatar.cc/40?img=30");
+    setCurrentUserName(
+      `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.username || "User"
+    );
+    setCurrentUserUsername(user.username ? `@${user.username}` : "@user");
+    if (user.id) setCurrentUserId(user.id);
   };
 
   const syncFriends = async (userId: string, token: string) => {
@@ -1011,7 +1029,7 @@ export default function FeedPage() {
       case "Friends": return <FriendsPage friends={friends} onAdd={handleAddFriend} />;
       case "Profile": return <UserProfilePage profile={selectedProfile} posts={selectedProfilePosts} loading={profileLoading} onBack={() => setActiveNav("Feed")} />;
       case "Subscription": return <SubscriptionPage />;
-      case "Settings": return <SettingsPage onLogout={handleLogout} />;
+      case "Settings": return <SettingsPage onLogout={handleLogout} onProfileUpdated={applyCurrentUser} />;
       case "Help & Support": return <HelpPage />;
       default: return (
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
