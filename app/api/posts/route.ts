@@ -5,7 +5,7 @@ import { getUserFromRequest } from '@/lib/auth-utils'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const page = Math.max(1, Number(searchParams.get('page') ?? 1))
-  const authorId = searchParams.get('author_id')
+  const author_id = searchParams.get('author_id')
   const limit = 10
   const from = (page - 1) * limit
 
@@ -16,14 +16,14 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
     .range(from, from + limit - 1)
 
-  if (authorId) query = query.eq('author_id', authorId)
+  if (author_id) {
+    query = query.eq('author_id', author_id)
+  }
 
   const { data, error } = await query
-
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ data, page, limit })
 }
-
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

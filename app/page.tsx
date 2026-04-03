@@ -72,9 +72,9 @@ const NAV_ITEMS = [
 
 function StoriesPage({ onOpenStory }: { onOpenStory: (story: Story) => void }) {
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6">
+    <div className="flex-1 overflow-y-auto px-4 py-5 pb-24 sm:px-6 sm:py-6 lg:pb-6">
       <h2 className="text-lg font-bold text-gray-800 mb-4">Stories</h2>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {STORIES.map(s => (
           <button
             key={s.id}
@@ -115,7 +115,7 @@ function FriendsPage({ friends, onAdd }: { friends: Friend[]; onAdd: (id: string
   const suggestions = friends.filter(f => !f.added);
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
+    <div className="flex-1 overflow-y-auto space-y-8 px-4 py-5 pb-24 sm:px-6 sm:py-6 lg:pb-6">
       <section>
         <h2 className="text-lg font-bold text-gray-800 mb-1">People You Follow</h2>
         <p className="text-sm text-gray-400 mb-6">Accounts you have already added</p>
@@ -124,7 +124,7 @@ function FriendsPage({ friends, onAdd }: { friends: Friend[]; onAdd: (id: string
             You have not followed anyone yet.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {acceptedFriends.map(f => (
               <div key={f.id} className="bg-white rounded-2xl p-4 flex flex-col items-center text-center">
                 <img src={f.avatar} alt={f.name} className="w-16 h-16 rounded-full object-cover mb-3" />
@@ -145,7 +145,7 @@ function FriendsPage({ friends, onAdd }: { friends: Friend[]; onAdd: (id: string
       <section>
         <h2 className="text-lg font-bold text-gray-800 mb-1">People you may know</h2>
         <p className="text-sm text-gray-400 mb-6">Based on your interests and connections</p>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {suggestions.map(f => (
             <div key={f.id} className="bg-white rounded-2xl p-4 flex flex-col items-center text-center">
               <img src={f.avatar} alt={f.name} className="w-16 h-16 rounded-full object-cover mb-3" />
@@ -167,7 +167,7 @@ function FriendsPage({ friends, onAdd }: { friends: Friend[]; onAdd: (id: string
 
 function SubscriptionPage() {
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6">
+    <div className="flex-1 overflow-y-auto px-4 py-5 pb-24 sm:px-6 sm:py-6 lg:pb-6">
       <h2 className="text-lg font-bold text-gray-800 mb-1">Subscription</h2>
       <p className="text-sm text-gray-400 mb-6">Upgrade to unlock premium features</p>
       <div className="grid grid-cols-1 gap-4 max-w-lg">
@@ -224,7 +224,7 @@ function UserProfilePage({
   if (!profile) return null;
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6">
+    <div className="flex-1 overflow-y-auto px-4 py-5 pb-24 sm:px-6 sm:py-6 lg:pb-6">
       <button type="button" onClick={onBack} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#5555ee]">
         <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -233,15 +233,15 @@ function UserProfilePage({
       </button>
 
       <div className="overflow-hidden rounded-[2rem] bg-white shadow-sm">
-        <div className="border-b border-gray-100 bg-gradient-to-br from-[#5555ee] to-[#4444cc] px-6 py-8 text-white">
-          <div className="flex items-center gap-4">
+        <div className="border-b border-gray-100 bg-gradient-to-br from-[#5555ee] to-[#4444cc] px-4 py-6 text-white sm:px-6 sm:py-8">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
             <img
               src={profile.avatar_url || "https://i.pravatar.cc/72"}
               alt={profile.username}
               className="h-20 w-20 rounded-full border-4 border-white/30 object-cover"
             />
             <div>
-              <p className="text-2xl font-bold">
+              <p className="text-xl font-bold sm:text-2xl">
                 {`${profile.first_name || ""} ${profile.last_name || ""}`.trim() || profile.username}
               </p>
               <p className="text-sm text-white/75">@{profile.username}</p>
@@ -250,14 +250,14 @@ function UserProfilePage({
               </p>
             </div>
           </div>
-          <div className="mt-5 flex gap-6 text-sm">
+          <div className="mt-5 flex flex-wrap gap-4 text-sm sm:gap-6">
             <div><span className="font-bold">{profile.posts_count ?? posts.length}</span> Posts</div>
             <div><span className="font-bold">{profile.followers_count ?? 0}</span> Followers</div>
             <div><span className="font-bold">{profile.following_count ?? 0}</span> Following</div>
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {loading ? (
             <p className="text-sm text-gray-400">Loading profile...</p>
           ) : (
@@ -269,7 +269,7 @@ function UserProfilePage({
                     No images posted yet.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                     {posts.filter(post => post.image).map(post => (
                       <div key={post.id} className="overflow-hidden rounded-2xl bg-gray-100">
                         <img src={post.image} alt="post" className="h-40 w-full object-cover" />
@@ -686,6 +686,7 @@ export default function FeedPage() {
   const [currentUserName, setCurrentUserName] = useState("User");
   const [currentUserUsername, setCurrentUserUsername] = useState("@user");
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const [storyProgress, setStoryProgress] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -827,6 +828,29 @@ export default function FeedPage() {
 
     return () => window.clearTimeout(timeoutId);
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (!selectedStory) {
+      setStoryProgress(0);
+      return;
+    }
+
+    const animationDuration = 5000; // 5 seconds
+    const startTime = Date.now();
+    const interval = window.setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / animationDuration) * 100, 100);
+      setStoryProgress(progress);
+
+      if (progress >= 100) {
+        setSelectedStory(null);
+        setStoryProgress(0);
+        clearInterval(interval);
+      }
+    }, 16); // ~60fps
+
+    return () => clearInterval(interval);
+  }, [selectedStory]);
 
   const handleLike = async (id: string) => {
     const post = posts.find(p => p.id === id);
@@ -1023,6 +1047,48 @@ export default function FeedPage() {
     window.location.href = "/login";
   };
 
+  const primaryMobileNavItems = NAV_ITEMS.filter(item =>
+    ["Feed", "Stories", "Friends", "Settings"].includes(item.label)
+  );
+
+  const renderFriendSuggestions = (className: string) => (
+    <div className={className}>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-gray-800 text-sm">Friend Suggestions</h3>
+        <button onClick={() => setActiveNav("Friends")} className="flex items-center gap-1 text-[#5555ee] text-sm font-semibold hover:underline">
+          See All
+        </button>
+      </div>
+      <div className="space-y-3">
+        {friends.filter(f => !f.added).map(f => (
+          <div key={f.id} className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <img src={f.avatar} alt={f.name} className="w-9 h-9 rounded-full object-cover" />
+              <div className="min-w-0">
+                <p className="truncate text-gray-800 text-sm font-semibold leading-tight">{f.name}</p>
+                <p className="truncate text-gray-400 text-[10px]">{f.handle}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleAddFriend(f.id)}
+              className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${f.added ? "bg-[#5555ee] border-[#5555ee] text-white" : "border-gray-200 text-gray-400 hover:border-[#5555ee] hover:text-[#5555ee]"}`}
+            >
+              {f.added ? (
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              )}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   const renderSection = () => {
     switch (activeNav) {
       case "Stories": return <StoriesPage onOpenStory={handleOpenStory} />;
@@ -1032,10 +1098,10 @@ export default function FeedPage() {
       case "Settings": return <SettingsPage onLogout={handleLogout} onProfileUpdated={applyCurrentUser} />;
       case "Help & Support": return <HelpPage />;
       default: return (
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4 pb-24 space-y-4 sm:px-6 lg:pb-4">
           {showNewPost && (
             <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl w-full max-w-lg p-5 shadow-2xl">
+              <div className="bg-white rounded-2xl w-full max-w-lg p-4 shadow-2xl sm:p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-bold text-gray-800 text-lg">New Post</h2>
                   <button onClick={() => setShowNewPost(false)} className="text-gray-400 hover:text-gray-600">
@@ -1044,7 +1110,7 @@ export default function FeedPage() {
                     </svg>
                   </button>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row">
                   <img src={currentUserAvatar} alt="me" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                   <textarea
                     value={newPostText}
@@ -1080,7 +1146,7 @@ export default function FeedPage() {
                   />
                 </div>
                 {newPostError && <p className="text-xs text-red-500 mt-1">{newPostError}</p>}
-                <div className="flex justify-between items-center mt-3">
+                <div className="mt-3 flex items-center justify-between gap-3">
                   <span className="text-sm text-gray-400">{newPostText.length}/280</span>
                   <button onClick={handleNewPost} disabled={!newPostText.trim()} className="bg-[#5555ee] hover:bg-[#4444cc] disabled:opacity-40 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors">Post</button>
                 </div>
@@ -1143,7 +1209,7 @@ export default function FeedPage() {
                   <img src={post.image} alt="post" className="w-full h-56 object-cover" />
                 </div>
               )}
-              <div className="px-4 pb-3 flex items-center gap-4 text-sm text-gray-400 border-b border-gray-100">
+              <div className="px-4 pb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-400 border-b border-gray-100">
                 <button
                   onClick={() => handleLike(post.id)}
                   className={`flex items-center gap-1.5 transition-colors ${post.liked ? "text-[#5555ee]" : "hover:text-[#5555ee]"}`}
@@ -1160,7 +1226,7 @@ export default function FeedPage() {
                   {post.comments} Comments
                 </span>
               </div>
-              <div className="px-4 py-3 flex items-center gap-3">
+              <div className="px-4 py-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
                 <img src={currentUserAvatar} alt="me" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                 <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
                   <input
@@ -1182,14 +1248,16 @@ export default function FeedPage() {
               </div>
             </div>
           ))}
+
+          {activeNav === "Feed" && renderFriendSuggestions("rounded-2xl bg-white p-4 xl:hidden")}
         </div>
       );
     }
   };
 
   return (
-    <div className="flex h-screen bg-[#eef0f8] overflow-hidden text-base" style={{ fontFamily: "'Plus Jakarta Sans', 'Nunito', sans-serif" }}>
-      <aside className="w-56 flex-shrink-0 bg-[#4444cc] flex flex-col h-full">
+    <div className="flex min-h-screen flex-col bg-[#eef0f8] text-base lg:h-screen lg:flex-row lg:overflow-hidden" style={{ fontFamily: "'Plus Jakarta Sans', 'Nunito', sans-serif" }}>
+      <aside className="hidden h-full w-56 flex-shrink-0 flex-col bg-[#4444cc] lg:flex">
         <div className="px-5 py-5 flex items-center gap-2">
           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
             <span className="text-[#4444cc] font-black text-sm">c</span>
@@ -1249,9 +1317,28 @@ export default function FeedPage() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex-shrink-0 bg-white border-b border-gray-100 flex items-center justify-between px-6 py-3 gap-4">
-          <div className="relative flex-1 max-w-sm">
+      <main className="flex min-w-0 flex-1 flex-col lg:overflow-hidden">
+        <header className="flex-shrink-0 border-b border-gray-100 bg-white px-4 py-3 sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between gap-3 lg:hidden">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4444cc]">
+                <span className="text-sm font-black text-white">c</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Connexio</p>
+                <p className="text-xs text-gray-400">{activeNav}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => { setActiveNav("Feed"); setShowNewPost(true); }}
+              className="flex items-center gap-2 rounded-xl bg-[#5555ee] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4444cc]"
+            >
+              Post
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-sm font-bold">+</span>
+            </button>
+          </div>
+          <div className="relative w-full sm:flex-1 sm:max-w-sm">
             <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-4 py-2">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1297,12 +1384,13 @@ export default function FeedPage() {
               </div>
             )}
           </div>
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
           <button
             onClick={() => { setActiveNav("Feed"); setShowNewPost(true); }}
-            className="flex items-center gap-2 bg-[#5555ee] hover:bg-[#4444cc] text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+            className="hidden items-center gap-2 rounded-xl bg-[#5555ee] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4444cc] sm:flex"
           >
             Add New Post
-            <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold">+</span>
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-sm font-bold">+</span>
           </button>
           <div className="flex items-center gap-2">
             <img src={currentUserAvatar} alt="me" className="w-9 h-9 rounded-full object-cover" />
@@ -1312,51 +1400,45 @@ export default function FeedPage() {
               </svg>
             </button>
           </div>
+          </div>
+          </div>
         </header>
+        <div className="border-b border-gray-100 bg-white px-4 py-3 lg:hidden">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {NAV_ITEMS.map(item => (
+              <button
+                key={item.label}
+                onClick={() => setActiveNav(item.label)}
+                className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${activeNav === item.label ? "bg-[#5555ee] text-white" : "bg-[#eef0f8] text-gray-500"}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex-1 flex flex-col overflow-hidden">
           {renderSection()}
         </div>
       </main>
 
-      {activeNav === "Feed" && (
-        <aside className="w-64 flex-shrink-0 bg-white border-l border-gray-100 overflow-y-auto p-4 space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-800 text-sm">Friend Suggestions</h3>
-              <button onClick={() => setActiveNav("Friends")} className="flex items-center gap-1 text-[#5555ee] text-sm font-semibold hover:underline">
-                See All
-              </button>
-            </div>
-            <div className="space-y-3">
-              {friends.filter(f => !f.added).map(f => (
-                <div key={f.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <img src={f.avatar} alt={f.name} className="w-9 h-9 rounded-full object-cover" />
-                    <div>
-                      <p className="text-gray-800 text-sm font-semibold leading-tight">{f.name}</p>
-                      <p className="text-gray-400 text-[10px]">{f.handle}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleAddFriend(f.id)}
-                    className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${f.added ? "bg-[#5555ee] border-[#5555ee] text-white" : "border-gray-200 text-gray-400 hover:border-[#5555ee] hover:text-[#5555ee]"}`}
-                  >
-                    {f.added ? (
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : (
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
-      )}
+      {activeNav === "Feed" && renderFriendSuggestions("hidden w-64 flex-shrink-0 overflow-y-auto border-l border-gray-100 bg-white p-4 xl:block")}
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-2 py-2 backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-md items-center justify-between gap-2">
+          {primaryMobileNavItems.map(item => (
+            <button
+              key={item.label}
+              onClick={() => setActiveNav(item.label)}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-semibold transition-colors ${activeNav === item.label ? "bg-[#eef0ff] text-[#5555ee]" : "text-gray-500"}`}
+            >
+              <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+              </svg>
+              <span className="truncate">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {selectedStory && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4">
@@ -1371,9 +1453,12 @@ export default function FeedPage() {
               </svg>
             </button>
             <div className="absolute left-4 right-4 top-4 z-10 h-1 rounded-full bg-white/25">
-              <div className="h-full w-2/3 rounded-full bg-white" />
+              <div 
+                className="h-full rounded-full bg-white transition-all duration-100 ease-linear" 
+                style={{ width: `${storyProgress}%` }}
+              />
             </div>
-            <div className="relative h-[70vh] min-h-[520px] bg-gradient-to-b from-slate-800 via-slate-900 to-black">
+            <div className="relative h-[70vh] min-h-[420px] bg-gradient-to-b from-slate-800 via-slate-900 to-black sm:min-h-[520px]">
               <img src={selectedStory.avatar} alt={selectedStory.handle} className="h-full w-full object-cover opacity-70" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/15 to-black/35" />
               <div className="absolute left-0 right-0 top-8 flex items-center gap-3 px-5">
